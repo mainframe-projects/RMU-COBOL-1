@@ -1,0 +1,447 @@
+       IDENTIFICATION DIVISION.                                         00010000
+      *********************************************************         00020000
+       PROGRAM-ID. PROG8.                                               00030000
+       AUTHOR. TYLER LAWTON.                                            00040000
+       DATE-WRITTEN. 04/15/18.                                          00050000
+       DATE-COMPILED.                                                   00060000
+      *                                                                 00070000
+      *********************************************************         00080000
+       ENVIRONMENT DIVISION.                                            00090000
+      *********************************************************         00100000
+      *                                                                 00110000
+       INPUT-OUTPUT SECTION.                                            00120000
+      *********************************************************         00130000
+      *                                                                 00140000
+       FILE-CONTROL.                                                    00150000
+            SELECT SIN-SALES-INFILE ASSIGN TO SALESIN.                  00160001
+            SELECT DIN-DEPT-INFILE  ASSIGN TO DEPTIN.                   00161001
+            SELECT SRR-STORE-REVENUE-REPORT ASSIGN TO OUTFILE.          00170000
+      *                                                                 00180000
+      *********************************************************         00190000
+       DATA DIVISION.                                                   00200000
+      *********************************************************         00210000
+      *                                                                 00220000
+       FILE SECTION.                                                    00230000
+      *********************************************************         00240000
+       FD  SIN-SALES-INFILE                                             00250001
+           RECORD CONTAINS 80 CHARACTERS                                00260000
+           RECORDING MODE IS F                                          00270000
+           LABEL RECORDS ARE STANDARD                                   00271000
+           DATA RECORD IS ISR-IN-SALES-RECORD.                          00272000
+      *                                                                 00273000
+       01  ISR-IN-SALES-RECORD.                                         00274000
+           05  FILLER                PIC X(2).                          00275000
+           05  ISR-STORE-NUM         PIC 9(3).                          00276000
+           05  ISR-DEPT-NUM          PIC X(6).                          00277000
+           05  ISR-EMPLOYEE-NUM      PIC 9(5).                          00278000
+           05  ISR-EMPLOYEE-NAME     PIC X(22).                         00278100
+           05  FILLER                PIC X(29).                         00278200
+           05  ISR-SALE-DATE.                                           00278311
+               10   ISR-SALE-MONTH   PIC 9(2).                          00278414
+               10   ISR-SALE-DAY     PIC 9(2).                          00278511
+               10   ISR-SALE-YEAR    PIC 9(2).                          00278711
+           05  ISR-SALES-AMOUNT      PIC S9(5)V9(2).                    00278800
+      *                                                                 00278900
+       FD  DIN-DEPT-INFILE                                              00279001
+           RECORD CONTAINS 80 CHARACTERS                                00279101
+           RECORDING MODE IS F                                          00279201
+           LABEL RECORDS ARE STANDARD                                   00279301
+           DATA RECORD IS IDR-IN-DEPT-RECORD.                           00279401
+      *                                                                 00279501
+       01  IDR-IN-DEPT-RECORD.                                          00279601
+           05  IDR-DEPT-NUM          PIC X(6).                          00279701
+           05  IDR-DEPT-NAME         PIC X(25).                         00279801
+           05  FILLER                PIC X(49).                         00279901
+      *                                                                 00280001
+       FD  SRR-STORE-REVENUE-REPORT                                     00280100
+           RECORD CONTAINS 132 CHARACTERS                               00280200
+           RECORDING MODE IS F                                          00280300
+           LABEL RECORDS ARE STANDARD                                   00280400
+           DATA RECORD IS REPORT-LINE.                                  00280500
+      *                                                                 00281000
+       01  REPORT-LINE               PIC X(132).                        00290000
+      *                                                                 00300000
+       WORKING-STORAGE SECTION.                                         00310000
+      *********************************************************         00320000
+       01   WS-SWITCHES.                                                00330000
+            05   WS-SALES-EOF-SWITCH        PIC X.                      00340001
+                 88  SALES-EOF                 VALUE "Y".               00350001
+                 88  SALES-NOT-EOF             VALUE "N".               00360001
+            05   WS-DEPT-EOF-SWITCH         PIC X.                      00361001
+                 88  DEPT-EOF                  VALUE "Y".               00362001
+                 88  DEPT-NOT-EOF              VALUE "N".               00363001
+            05   WS-DEPT-NAME-SW            PIC X.                      00370000
+                 88  DEPT-NAME-FOUND           VALUE "Y".               00380000
+                 88  DEPT-NAME-NOT-FOUND       VALUE "N".               00390000
+            05   WS-HEADING-SWITCH          PIC X.                      00391000
+                 88  PRINT-STORE-HEADING       VALUE "Y".               00392000
+                 88  PRINT-TOTAL-HEADING       VALUE "N".               00393000
+      *                                                                 00394000
+       01   WS-CONTROL-FIELDS.                                          00395000
+            05   WS-CURRENT-STORE-NUM  PIC XXX.                         00396000
+            05   WS-DEPT-TABLE-COUNT   PIC 99 VALUE ZERO.               00396101
+      *                                                                 00397000
+       01   WS-PRINT-FIELDS.                                            00398000
+            05   WS-STORE-NAME       PIC  X(13).                        00399000
+      *                                                                 00400000
+       01   WS-CURRENT-DATE-AND-TIME.                                   00410000
+            05   WS-YEAR             PIC 9999.                          00420000
+            05   WS-MONTH            PIC 99.                            00430000
+            05   WS-DAY              PIC 99.                            00440000
+            05   WS-HOUR             PIC 99.                            00450000
+            05   WS-MINUTE           PIC 99.                            00460000
+            05   FILLER              PIC X(9).                          00470000
+      *                                                                 00480000
+       01   WS-COUNT-FIELDS.                                            00490000
+            05   WS-PAGE-COUNT       PIC S9(3)     VALUE ZERO.          00500000
+            05   WS-MAX-PRINT-LINES  PIC S9(3)     VALUE +35.           00510015
+            05   WS-LINE-COUNT       PIC S9(3)     VALUE ZERO.          00520000
+      *                                                                 00530000
+       01   WS-CALCULATED-FIELDS.                                       00540000
+            05   WS-TOTAL-ITEMS      PIC S9(6)     VALUE ZERO.          00550000
+            05   WS-ITEM-PRICE       PIC  9(3)V99  VALUE ZERO.          00560000
+      *                                                                 00570000
+       01   WS-TOTAL-FIELDS.                                            00580000
+            05   WS-SUB-TOTAL       PIC S9(12)V9(2) VALUE ZERO.         00581001
+            05   WS-GRAND-TOTAL     PIC S9(12)V9(2) VALUE ZERO.         00582001
+      *                                                                 00583000
+       01   WS-MONTH-VALUES.                                            00583111
+            05   FILLER    PIC X(3)   VALUE "JAN".                      00583200
+            05   FILLER    PIC X(3)   VALUE "FEB".                      00583300
+            05   FILLER    PIC X(3)   VALUE "MAR".                      00583400
+            05   FILLER    PIC X(3)   VALUE "APR".                      00583500
+            05   FILLER    PIC X(3)   VALUE "MAY".                      00583600
+            05   FILLER    PIC X(3)   VALUE "JUN".                      00583700
+            05   FILLER    PIC X(3)   VALUE "JUL".                      00583800
+            05   FILLER    PIC X(3)   VALUE "AUG".                      00583900
+            05   FILLER    PIC X(3)   VALUE "SEP".                      00584000
+            05   FILLER    PIC X(3)   VALUE "OCT".                      00584100
+            05   FILLER    PIC X(3)   VALUE "NOV".                      00584200
+            05   FILLER    PIC X(3)   VALUE "DEC".                      00584300
+      *                                                                 00584400
+       01   WS-MONTH-TABLE REDEFINES WS-MONTH-VALUES.                   00584511
+            05   WS-MONTH-NAME    PIC X(3)  OCCURS 12 TIMES.            00584600
+      *                                                                 00584700
+       01   WS-STORE-NAMES.                                             00584800
+            05   FILLER  PIC X(18)  VALUE "PHILADELPHIA      ".         00584900
+            05   FILLER  PIC X(18)  VALUE "PITTSBURGH        ".         00585000
+            05   FILLER  PIC X(18)  VALUE "NEW YORK CITY     ".         00586000
+            05   FILLER  PIC X(18)  VALUE "BOSTON            ".         00586100
+            05   FILLER  PIC X(18)  VALUE "TRENTON           ".         00586200
+            05   FILLER  PIC X(18)  VALUE "COLUMBUS          ".         00586300
+            05   FILLER  PIC X(18)  VALUE "ALBANY            ".         00586400
+            05   FILLER  PIC X(18)  VALUE "HARTFORD          ".         00586500
+            05   FILLER  PIC X(18)  VALUE "WASHINGTON, D.C.  ".         00586600
+            05   FILLER  PIC X(18)  VALUE "BALTIMORE         ".         00586700
+      *                                                                 00586800
+       01   WS-STORE-TABLE REDEFINES WS-STORE-NAMES.                    00586901
+            05   WS-STORE-GROUP     OCCURS 10 TIMES                     00587001
+                                    INDEXED BY STORE-TABLE-INDEX.       00587101
+                 10   WS-STORE-TABLE-NAME  PIC X(18).                   00587310
+      *                                                                 00587400
+       01   WS-DEPT-TABLE.                                              00589701
+            05   DEPT-TABLE-GROUP  OCCURS 1 TO 10 TIMES                 00589801
+                                   DEPENDING ON WS-DEPT-TABLE-COUNT     00589903
+                                   INDEXED BY DEPT-TABLE-INDEX.         00590001
+                 10   WS-DEPT-TABLE-NUM        PIC X(6).                00590100
+                 10   WS-DEPT-TABLE-NAME       PIC X(25).               00590200
+      *                                                                 00590701
+       01   WS-DEPT-RECORD.                                             00590801
+            05   WS-DEPT-NUM  PIC X(6).                                 00590903
+            05   WS-DEPT-NAME PIC X(25).                                00591003
+            05   FILLER       PIC X(49).                                00591103
+      *                                                                 00591201
+       01   WS-SUBSCRIPTS.                                              00591300
+            05   WS-MONTH-SUB        PIC S99  BINARY.                   00591400
+      *                                                                 00591600
+       01   WS-BLANK-LINE            PIC X(132)    VALUE SPACES.        00591700
+      *                                                                 00591800
+       01   HL1-HEADING-LINE-1.                                         00591900
+            05  FILLER               PIC X(2)   VALUE SPACES.           00592000
+            05  FILLER               PIC X(6)   VALUE "DATE: ".         00592100
+            05  HL1-MONTH            PIC X(3).                          00592200
+            05  FILLER               PIC X(1)   VALUE SPACES.           00592300
+            05  HL1-DAY              PIC X(2).                          00592400
+            05  FILLER               PIC X(2)   VALUE ", ".             00592500
+            05  HL1-YEAR             PIC X(4).                          00592600
+            05  FILLER               PIC X(18)  VALUE SPACES.           00592700
+            05  FILLER               PIC X(28)                          00592800
+                  VALUE "OFFICEU STORE REVENUE REPORT".                 00592900
+            05  FILLER               PIC X(20)  VALUE SPACES.           00593000
+            05  FILLER               PIC X(6)   VALUE "PAGE: ".         00593100
+            05  HL1-PAGE-NUMBER      PIC ZZ9.                           00593200
+            05  FILLER               PIC X(37)  VALUE SPACES.           00593300
+      *                                                                 00593400
+       01   HL2-HEADING-LINE-2.                                         00593500
+            05  FILLER               PIC X(2)   VALUE SPACES.           00593600
+            05  FILLER               PIC X(6)   VALUE "TIME: ".         00593700
+            05  HL2-HOUR             PIC X(2).                          00593800
+            05  FILLER               PIC X(1)   VALUE ":".              00593900
+            05  HL2-MINUTE           PIC X(2).                          00594000
+            05  FILLER               PIC X(25)  VALUE SPACES.           00594100
+            05  FILLER               PIC X(6)   VALUE "STORE ".         00594200
+            05  HL2-STORE-NUM        PIC 9(3).                          00594300
+            05  FILLER               PIC X(1)   VALUE SPACES.           00594400
+            05  HL2-STORE-NAME       PIC X(18).                         00594500
+            05  FILLER               PIC X(15)  VALUE SPACES.           00594600
+            05  FILLER               PIC X(14)  VALUE "PROG8-STORRPT3". 00594709
+            05  FILLER               PIC X(37)  VALUE SPACES.           00594800
+      *                                                                 00594900
+       01   HL2-HEADING-LINE-2-ALT.                                     00595000
+            05  FILLER               PIC X(2)   VALUE SPACES.           00595100
+            05  FILLER               PIC X(6)   VALUE "TIME: ".         00595200
+            05  HL2-ALT-HOUR         PIC X(2).                          00595300
+            05  FILLER               PIC X(1)   VALUE ":".              00595400
+            05  HL2-ALT-MINUTE       PIC X(2).                          00595500
+            05  FILLER               PIC X(74)  VALUE SPACES.           00595600
+            05  FILLER               PIC X(8)   VALUE "STORRPT3".       00595709
+            05  FILLER               PIC X(37)  VALUE SPACES.           00595800
+      *                                                                 00595900
+       01   HL3-HEADING-LINE-3.                                         00596000
+            05  FILLER               PIC X(2)   VALUE SPACES.           00596100
+            05  FILLER               PIC X(8)   VALUE "EMPLOYEE".       00596200
+            05  FILLER               PIC X(27)  VALUE SPACES.           00596300
+            05  FILLER               PIC X(4)   VALUE "DEPT".           00596400
+            05  FILLER               PIC X(49)  VALUE SPACES.           00596513
+            05  FILLER               PIC X(5)   VALUE "SALES".          00596800
+            05  FILLER               PIC X(37)  VALUE SPACES.           00596900
+      *                                                                 00597000
+       01   HL4-HEADING-LINE-4.                                         00597100
+            05  FILLER               PIC X(2)   VALUE SPACES.           00597200
+            05  FILLER               PIC X(6)   VALUE "NUMBER".         00597300
+            05  FILLER               PIC X(4)   VALUE SPACES.           00597400
+            05  FILLER               PIC X(13)  VALUE "EMPLOYEE NAME".  00597500
+            05  FILLER               PIC X(11)  VALUE SPACES.           00597600
+            05  FILLER               PIC X(6)   VALUE "NUMBER".         00597700
+            05  FILLER               PIC X(2)   VALUE SPACES.           00597800
+            05  FILLER               PIC X(9)   VALUE "DEPT NAME".      00597900
+            05  FILLER               PIC X(17)  VALUE SPACES.           00598013
+            05  FILLER               PIC X(12)  VALUE "DATE OF SALE".   00598113
+            05  FILLER               PIC X(7)   VALUE SPACES.           00598213
+            05  FILLER               PIC X(6)   VALUE "AMOUNT".         00598300
+            05  FILLER               PIC X(37)  VALUE SPACES.           00598400
+      *                                                                 00598500
+       01   DL-DETAIL-LINE.                                             00598600
+            05  FILLER               PIC X(2)   VALUE SPACES.           00598700
+            05  DL-EMPLOYEE-NUM      PIC 9(5).                          00598800
+            05  FILLER               PIC X(5)   VALUE SPACES.           00598900
+            05  DL-EMPLOYEE-NAME     PIC X(22).                         00599000
+            05  FILLER               PIC X(2)   VALUE SPACES.           00599100
+            05  DL-DEPT-NUM          PIC X(6).                          00599200
+            05  FILLER               PIC X(2)   VALUE SPACES.           00599300
+            05  DL-DEPT-NAME         PIC X(25).                         00599400
+            05  FILLER               PIC X(2)   VALUE SPACES.           00599500
+            05  DL-SALE-DATE.                                           00599711
+                10   FILLER          PIC X(2)   VALUE "20".             00599811
+                10   DL-SALE-YEAR    PIC 9(2).                          00599911
+                10   FILLER          PIC X(1)   VALUE SPACES.           00600016
+                10   DL-SALE-MONTH   PIC X(3).                          00600111
+                10   FILLER          PIC X(1)   VALUE SPACES.           00600216
+                10   DL-SALE-DAY     PIC 9(2).                          00600311
+            05  FILLER               PIC X(4)   VALUE SPACES.           00600411
+            05  DL-SALES-AMOUNT      PIC ZZ,ZZ9.99-.                    00600500
+            05  FILLER               PIC X(36)  VALUE SPACES.           00600600
+      *                                                                 00600700
+       01   STL-SUB-TOTAL-LINE.                                         00600800
+            05  FILLER               PIC X(2)   VALUE SPACES.           00600900
+            05  FILLER               PIC X(6)   VALUE "STORE ".         00601000
+            05  STL-STORE-NUM        PIC X(3).                          00601100
+            05  FILLER               PIC X(7)   VALUE " TOTAL:".        00601200
+            05  FILLER               PIC X(65)  VALUE SPACES.           00601300
+            05  STL-SUB-TOTAL        PIC Z,ZZZ,ZZ9.99-.                 00601400
+            05  FILLER               PIC X(36)  VALUE SPACES.           00601500
+      *                                                                 00601600
+       01   GTL-GRAND-TOTAL-LINE.                                       00601700
+            05  FILLER               PIC X(2)   VALUE SPACES.           00601800
+            05  FILLER               PIC X(24)                          00601900
+                  VALUE "TOTAL SALES ALL STORES: ".                     00602000
+            05  GTL-GRAND-TOTAL      PIC $$$$,$$$,$$9.99-.              00602100
+            05  FILLER               PIC X(90)  VALUE SPACES.           00602200
+      *                                                                 00602300
+      *********************************************************         00602400
+       PROCEDURE DIVISION.                                              00602500
+      *********************************************************         00602600
+      *                                                                 00602700
+       000-PROGRAM-CONTROL.                                             00602800
+      *********************************************************         00602900
+           SET     SALES-NOT-EOF    TO TRUE.                            00603001
+           SET     DEPT-NOT-EOF     TO TRUE.                            00603105
+           PERFORM A100-INITIALIZE.                                     00603200
+           PERFORM A200-PREPARE-REPORT-LINES                            00603300
+               UNTIL    SALES-EOF.                                      00603401
+           PERFORM A300-FINALIZE.                                       00603500
+           STOP RUN.                                                    00603600
+      *                                                                 00603700
+       A100-INITIALIZE.                                                 00603800
+      *********************************************************         00603900
+           OPEN INPUT   SIN-SALES-INFILE                                00604001
+                        DIN-DEPT-INFILE                                 00604104
+                OUTPUT  SRR-STORE-REVENUE-REPORT.                       00604200
+           PERFORM      B100-GET-DATE-TIME.                             00604300
+           PERFORM      B300-READ-IN-SALES-RECORD.                      00604400
+           MOVE         ISR-STORE-NUM  TO WS-CURRENT-STORE-NUM.         00605000
+           PERFORM      B250-LOAD-DEPT-TABLE.                           00605101
+           PERFORM      C100-PRINT-STORE-HEADINGS.                      00606000
+           SET          PRINT-STORE-HEADING      TO TRUE.               00607000
+      *                                                                 00608000
+       A200-PREPARE-REPORT-LINES.                                       00609000
+      *********************************************************         00610000
+           IF  ISR-STORE-NUM  NOT =  WS-CURRENT-STORE-NUM               00620000
+               PERFORM B400-STORE-CONTROL-BREAK                         00630000
+           END-IF.                                                      00640000
+      *                                                                 00650000
+           PERFORM B200-PRINT-DETAIL-LINE.                              00660000
+           PERFORM B300-READ-IN-SALES-RECORD.                           00670000
+      *                                                                 00680000
+       A300-FINALIZE.                                                   00690000
+      *********************************************************         00700000
+           SET     PRINT-TOTAL-HEADING TO TRUE.                         00710000
+           PERFORM B400-STORE-CONTROL-BREAK.                            00720000
+           PERFORM B500-PRINT-GRAND-TOTAL-LINE.                         00730000
+           CLOSE   SIN-SALES-INFILE                                     00740001
+                   DIN-DEPT-INFILE                                      00741004
+                   SRR-STORE-REVENUE-REPORT.                            00750000
+      *                                                                 00760000
+       B100-GET-DATE-TIME.                                              00770000
+      *********************************************************         00780000
+           MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-AND-TIME.      00790000
+           MOVE WS-MONTH              TO WS-MONTH-SUB.                  00800000
+           MOVE WS-MONTH-NAME (WS-MONTH-SUB)  TO  HL1-MONTH.            00810000
+           MOVE WS-DAY                TO HL1-DAY.                       00820000
+           MOVE WS-YEAR               TO HL1-YEAR.                      00830000
+           MOVE WS-HOUR               TO HL2-HOUR.                      00840000
+           MOVE WS-MINUTE             TO HL2-MINUTE.                    00841000
+      *                                                                 00842000
+       B200-PRINT-DETAIL-LINE.                                          00843000
+      *********************************************************         00844000
+           IF  WS-LINE-COUNT  >  WS-MAX-PRINT-LINES                     00845000
+               PERFORM C100-PRINT-STORE-HEADINGS                        00846000
+           END-IF.                                                      00847000
+      *                                                                 00848000
+           MOVE     ISR-EMPLOYEE-NUM   TO  DL-EMPLOYEE-NUM.             00849000
+           MOVE     ISR-EMPLOYEE-NAME  TO  DL-EMPLOYEE-NAME.            00850000
+           MOVE     ISR-DEPT-NUM       TO  DL-DEPT-NUM.                 00860000
+           PERFORM  D450-SEARCH-DEPT-TABLE.                             00870008
+      *                                                                 00871013
+           MOVE     ISR-SALE-YEAR      TO  DL-SALE-YEAR.                00880011
+           MOVE     ISR-SALE-MONTH     TO  WS-MONTH-SUB.                00881011
+           MOVE     WS-MONTH-NAME (WS-MONTH-SUB)  TO DL-SALE-MONTH.     00881112
+           MOVE     ISR-SALE-DAY       TO  DL-SALE-DAY.                 00882011
+      *                                                                 00883013
+           MOVE     ISR-SALES-AMOUNT   TO  DL-SALES-AMOUNT.             00890000
+      *                                                                 00900000
+           ADD      ISR-SALES-AMOUNT   TO  WS-SUB-TOTAL                 00910000
+      *                                                                 00920000
+           WRITE    REPORT-LINE        FROM  DL-DETAIL-LINE             00930000
+                     AFTER  ADVANCING 1 LINE.                           00940011
+           ADD  1  TO  WS-LINE-COUNT.                                   00950000
+      *                                                                 00951000
+       B250-LOAD-DEPT-TABLE.                                            00951101
+      *********************************************************         00951201
+           PERFORM D350-READ-DIN-DEPT-INFILE.                           00951304
+           PERFORM C250-LOAD-ROUTINE-DEPT-TABLE                         00951401
+              WITH TEST AFTER                                           00951501
+              VARYING DEPT-TABLE-INDEX FROM 1 BY 1                      00951601
+              UNTIL   DEPT-EOF OR DEPT-TABLE-INDEX = 10.                00951701
+      *                                                                 00951801
+       B300-READ-IN-SALES-RECORD.                                       00952000
+      *********************************************************         00953000
+           READ SIN-SALES-INFILE                                        00954001
+                AT END  SET SALES-EOF TO TRUE.                          00955005
+      *                                                                 00956000
+       B400-STORE-CONTROL-BREAK.                                        00957000
+      *********************************************************         00958000
+           ADD     WS-SUB-TOTAL         TO  WS-GRAND-TOTAL.             00959000
+           PERFORM C300-PRINT-SUBTOTAL-LINE.                            00960000
+           IF  PRINT-STORE-HEADING                                      00970000
+              PERFORM C100-PRINT-STORE-HEADINGS                         00980000
+           ELSE                                                         00990000
+              PERFORM C200-PRINT-TOTAL-HEADINGS                         01000000
+           END-IF.                                                      01010000
+           MOVE    ISR-STORE-NUM        TO  WS-CURRENT-STORE-NUM.       01020000
+      *                                                                 01030000
+       B500-PRINT-GRAND-TOTAL-LINE.                                     01040000
+      *********************************************************         01050000
+           MOVE    WS-GRAND-TOTAL  TO    GTL-GRAND-TOTAL.               01060000
+           WRITE   REPORT-LINE     FROM  GTL-GRAND-TOTAL-LINE.          01070000
+      *                                                                 01080000
+       C100-PRINT-STORE-HEADINGS.                                       01090000
+      *********************************************************         01100000
+           ADD 1              TO WS-PAGE-COUNT.                         01110000
+           MOVE WS-PAGE-COUNT TO HL1-PAGE-NUMBER.                       01120000
+           WRITE REPORT-LINE  FROM HL1-HEADING-LINE-1                   01130000
+                  AFTER ADVANCING   PAGE.                               01140000
+      *                                                                 01150000
+           MOVE   ISR-STORE-NUM          TO   HL2-STORE-NUM.            01151000
+           MOVE   WS-STORE-TABLE-NAME (STORE-TABLE-INDEX)               01153001
+                                         TO   HL2-STORE-NAME.           01153101
+           SET    STORE-TABLE-INDEX UP BY 1.                            01153209
+           WRITE REPORT-LINE  FROM HL2-HEADING-LINE-2                   01154000
+                  AFTER ADVANCING 1 LINE.                               01155000
+      *                                                                 01156000
+           WRITE REPORT-LINE  FROM WS-BLANK-LINE                        01157000
+                  AFTER ADVANCING 1 LINE.                               01158000
+      *                                                                 01159000
+           WRITE REPORT-LINE  FROM HL3-HEADING-LINE-3                   01160000
+                  AFTER ADVANCING 1 LINE.                               01160100
+           WRITE REPORT-LINE  FROM HL4-HEADING-LINE-4                   01160200
+                  AFTER ADVANCING 1 LINE.                               01160300
+           WRITE REPORT-LINE  FROM WS-BLANK-LINE                        01160400
+                  AFTER ADVANCING 1 LINE.                               01160500
+      *                                                                 01160600
+           MOVE ZERO          TO WS-LINE-COUNT.                         01160700
+      *                                                                 01160800
+       C200-PRINT-TOTAL-HEADINGS.                                       01160900
+      *********************************************************         01161000
+           ADD 1              TO WS-PAGE-COUNT.                         01161100
+           MOVE WS-PAGE-COUNT TO HL1-PAGE-NUMBER.                       01161200
+           WRITE REPORT-LINE  FROM HL1-HEADING-LINE-1                   01161300
+                  AFTER ADVANCING   PAGE.                               01161400
+      *                                                                 01161500
+           MOVE WS-HOUR               TO HL2-ALT-HOUR.                  01161600
+           MOVE WS-MINUTE             TO HL2-ALT-MINUTE.                01161700
+      *                                                                 01161800
+           WRITE REPORT-LINE  FROM HL2-HEADING-LINE-2-ALT               01161900
+                  AFTER ADVANCING 1 LINE.                               01162000
+      *                                                                 01162100
+           WRITE REPORT-LINE  FROM WS-BLANK-LINE                        01162200
+                  AFTER ADVANCING 1 LINE.                               01162300
+      *                                                                 01162400
+       C250-LOAD-ROUTINE-DEPT-TABLE.                                    01162501
+      *********************************************************         01162601
+           MOVE WS-DEPT-NUM   TO WS-DEPT-TABLE-NUM (DEPT-TABLE-INDEX).  01162708
+           MOVE WS-DEPT-NAME  TO WS-DEPT-TABLE-NAME (DEPT-TABLE-INDEX). 01162808
+           PERFORM D350-READ-DIN-DEPT-INFILE.                           01162901
+      *                                                                 01163001
+       C300-PRINT-SUBTOTAL-LINE.                                        01163100
+      *********************************************************         01163200
+           MOVE    WS-CURRENT-STORE-NUM TO STL-STORE-NUM.               01163300
+           MOVE    WS-SUB-TOTAL         TO STL-SUB-TOTAL.               01163400
+           MOVE    ZEROS                TO WS-SUB-TOTAL.                01163500
+      *                                                                 01163600
+           WRITE   REPORT-LINE   FROM  STL-SUB-TOTAL-LINE               01164000
+                  AFTER ADVANCING 1 LINE.                               01165000
+           WRITE   REPORT-LINE   FROM  WS-BLANK-LINE                    01166000
+                  AFTER ADVANCING 1 LINE.                               01167000
+           ADD    2              TO    WS-LINE-COUNT.                   01168000
+      *                                                                 01169000
+       D350-READ-DIN-DEPT-INFILE.                                       01301001
+      *********************************************************         01302001
+           READ DIN-DEPT-INFILE INTO WS-DEPT-RECORD                     01302101
+           AT END        SET DEPT-NAME-FOUND TO TRUE                    01302201
+           NOT AT END    ADD 1 TO WS-DEPT-TABLE-COUNT.                  01302301
+      *                                                                 01303001
+       D450-SEARCH-DEPT-TABLE.                                          01310000
+      *********************************************************         01320000
+           SET DEPT-TABLE-INDEX TO 1.                                   01330005
+           SEARCH DEPT-TABLE-GROUP                                      01340005
+              AT END                                                    01350005
+                 MOVE "NO DEPT NAME" TO DL-DEPT-NAME                    01360005
+              WHEN                                                      01361005
+                 DEPT-TABLE-INDEX > WS-DEPT-TABLE-COUNT                 01362005
+                 MOVE "NO DEPT NAME" TO DL-DEPT-NAME                    01363005
+              WHEN                                                      01364005
+                 WS-DEPT-TABLE-NUM (DEPT-TABLE-INDEX) = ISR-DEPT-NUM    01365005
+                 MOVE WS-DEPT-TABLE-NAME (DEPT-TABLE-INDEX)             01366006
+                                           TO DL-DEPT-NAME.             01367006
+      *                                                                 01370000

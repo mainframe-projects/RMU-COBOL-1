@@ -1,0 +1,337 @@
+       IDENTIFICATION DIVISION.                                         00010001
+      *********************************************************         00020001
+       PROGRAM-ID. PROG5.                                               00030001
+       AUTHOR. TYLER LAWTON.                                            00040001
+       DATE-WRITTEN. 03/16/18.                                          00050001
+       DATE-COMPILED.                                                   00060001
+      *                                                                 00070001
+      *********************************************************         00080001
+       ENVIRONMENT DIVISION.                                            00150001
+      *********************************************************         00152001
+      *                                                                 00170001
+       INPUT-OUTPUT SECTION.                                            00180001
+      *********************************************************         00190001
+      *                                                                 00200001
+       FILE-CONTROL.                                                    00210001
+            SELECT IIF-ITEM-INFILE2 ASSIGN TO INFILE.                   00220001
+            SELECT SPR-SELLING-PRICE-REPORT ASSIGN TO OUTFILE.          00230001
+      *                                                                 00240001
+      *********************************************************         00250001
+       DATA DIVISION.                                                   00260001
+      *********************************************************         00270001
+      *                                                                 00271001
+       FILE SECTION.                                                    00272001
+      *********************************************************         00273001
+       FD  IIF-ITEM-INFILE2                                             00274001
+           RECORD CONTAINS 80 CHARACTERS                                00275001
+           RECORDING MODE IS F                                          00276001
+           LABEL RECORDS ARE STANDARD                                   00277001
+           DATA RECORD IS IIR-ITEM-IN-RECORD.                           00278001
+      *                                                                 00279001
+       01  IIR-ITEM-IN-RECORD.                                          00280001
+           05  IN-ITEM-NUMBER        PIC X(2).                          00290001
+           05  IN-ITEM-DESCRIPTION   PIC X(34).                         00300001
+           05  IN-ITEM-COST          PIC 999V99.                        00310001
+           05  FILLER                PIC X(39).                         00320001
+      *                                                                 00330001
+       FD  SPR-SELLING-PRICE-REPORT                                     00340001
+           RECORD CONTAINS 132 CHARACTERS                               00350001
+           RECORDING MODE IS F                                          00360001
+           LABEL RECORDS ARE STANDARD                                   00370001
+           DATA RECORD IS REPORT-LINE.                                  00380001
+      *                                                                 00390001
+       01  REPORT-LINE               PIC X(132).                        00400001
+      *                                                                 00410001
+       WORKING-STORAGE SECTION.                                         00420001
+      *********************************************************         00430001
+       01   WS-SWITCHES.                                                00440001
+            05   WS-EOF-SWITCH       PIC X  VALUE "N".                  00450001
+      *                                                                 00460001
+       01   WS-PRINT-FIELDS.                                            00470001
+            05   WS-PAGE-COUNT       PIC S9(3)     VALUE ZERO.          00480001
+            05   WS-LINES-ON-PAGE    PIC S9(3)     VALUE +40.           00490016
+            05   WS-LINE-COUNT       PIC S9(3)     VALUE ZERO.          00500001
+            05   WS-PROFIT-MARGIN    PIC  99.                           00501001
+      *                                                                 00510001
+       01   WS-CALCULATED-FIELDS.                                       00520001
+            05   WS-TOTAL-ITEMS      PIC S9(6)     VALUE ZERO.          00530001
+            05   WS-ITEM-PRICE       PIC  9(3)V99.                      00540001
+            05   WS-VARIABLE-PROFIT-DECIMAL PIC 9V99.                   00541013
+            05   WS-DIVISOR          PIC  999V999.                      00542006
+      *                                                                 00550001
+       01   WS-CURRENT-DATE-AND-TIME.                                   00560001
+            05   WS-YEAR             PIC 9999.                          00570001
+            05   WS-MONTH            PIC 99.                            00580001
+            05   WS-DAY              PIC 99.                            00581001
+            05   WS-HOUR             PIC 99.                            00582001
+            05   WS-MINUTE           PIC 99.                            00583001
+            05   FILLER              PIC X(9).                          00584001
+      *                                                                 00585001
+       01   HL1-HEADING-LINE-1.                                         00586001
+            05  FILLER               PIC X(10)  VALUE SPACES.           00587001
+            05  FILLER               PIC X(6)   VALUE "DATE: ".         00588001
+            05  HL1-MONTH            PIC 9(2).                          00589001
+            05  FILLER               PIC X(1)   VALUE "/".              00589101
+            05  HL1-DAY              PIC 9(2).                          00589201
+            05  FILLER               PIC X(1)   VALUE "/".              00589301
+            05  HL1-YEAR             PIC 9(4).                          00589401
+            05  FILLER               PIC X(33)  VALUE SPACES.           00589501
+            05  FILLER   PIC X(20) VALUE "SELLING PRICE REPORT".        00589601
+            05  FILLER               PIC X(34)  VALUE SPACES.           00589701
+            05  FILLER               PIC X(6)   VALUE "PAGE: ".         00589801
+            05  HL1-PAGE-NUMBER      PIC ZZ9.                           00589901
+            05  FILLER               PIC X(10)  VALUE SPACES.           00590001
+      *                                                                 00590101
+       01   HL2-HEADING-LINE-2.                                         00590201
+            05  FILLER               PIC X(10)  VALUE SPACES.           00590301
+            05  FILLER               PIC X(6)   VALUE "TIME: ".         00590401
+            05  HL2-HOUR             PIC 9(2).                          00590501
+            05  FILLER               PIC X(1)   VALUE ":".              00590601
+            05  HL2-MINUTE           PIC 9(2).                          00590701
+            05  FILLER               PIC X(28)  VALUE SPACES.           00590801
+            05  FILLER               PIC X(39)                          00590901
+                  VALUE "PROFIT MARGIN DETERMINED BY ITEM NUMBER".      00591001
+            05  FILLER               PIC X(25)  VALUE SPACES.           00591101
+            05  FILLER               PIC X(5)   VALUE "PROG5".          00591215
+            05  FILLER               PIC X(14)  VALUE SPACES.           00591301
+      *                                                                 00591401
+       01   HL3-HEADING-LINE-3.                                         00591501
+            05  FILLER               PIC X(10)  VALUE SPACES.           00591601
+            05  FILLER               PIC X(4)   VALUE "ITEM".           00591701
+            05  FILLER               PIC X(8)   VALUE SPACES.           00591801
+            05  FILLER               PIC X(4)   VALUE "ITEM".           00591901
+            05  FILLER               PIC X(35)  VALUE SPACES.           00592001
+            05  FILLER               PIC X(4)   VALUE "ITEM".           00592101
+            05  FILLER               PIC X(5)   VALUE SPACES.           00592201
+            05  FILLER               PIC X(4)   VALUE "ITEM".           00592301
+            05  FILLER               PIC X(3)   VALUE SPACES.           00592401
+            05  FILLER               PIC X(6)   VALUE "PROFIT".         00592501
+            05  FILLER               PIC X(3)   VALUE SPACES.           00592601
+            05  FILLER               PIC X(5)   VALUE "ERROR".          00592701
+            05  FILLER               PIC X(41)  VALUE SPACES.           00592801
+      *                                                                 00592901
+       01   HL4-HEADING-LINE-4.                                         00593001
+            05  FILLER               PIC X(10)  VALUE SPACES.           00593113
+            05  FILLER               PIC X(3)   VALUE "NO.".            00593201
+            05  FILLER               PIC X(9)   VALUE SPACES.           00593301
+            05  FILLER               PIC X(11)  VALUE "DESCRIPTION".    00593401
+            05  FILLER               PIC X(28)  VALUE SPACES.           00593501
+            05  FILLER               PIC X(4)   VALUE "COST".           00593601
+            05  FILLER               PIC X(5)   VALUE SPACES.           00593701
+            05  FILLER               PIC X(5)   VALUE "PRICE".          00593801
+            05  FILLER               PIC X(2)   VALUE SPACES.           00594001
+            05  FILLER               PIC X(6)   VALUE "MARGIN".         00594101
+            05  FILLER               PIC X(3)   VALUE SPACES.           00594201
+            05  FILLER               PIC X(7)   VALUE "MESSAGE".        00594301
+            05  FILLER               PIC X(39)  VALUE SPACES.           00594401
+      *                                                                 00594501
+       01   IP1-ITEM-PRINT-LINE-1.                                      00594601
+            05  FILLER               PIC X(10)  VALUE SPACES.           00594701
+            05  IP1-ITEM-NUMBER      PIC 9(4).                          00594801
+            05  FILLER               PIC X(8)   VALUE SPACES.           00594901
+            05  IP1-ITEM-DESCRIPTION PIC X(34).                         00595001
+            05  FILLER               PIC X(3)   VALUE SPACES.           00595101
+            05  IP1-ITEM-COST        PIC ZZ9.99.                        00595201
+            05  FILLER               PIC X(3)   VALUE SPACES.           00595301
+            05  IP1-ITEM-PRICE       PIC $$$9.99.                       00595401
+            05  FILLER               PIC X(5)   VALUE SPACES.           00595501
+            05  IP1-PROFIT-MARGIN    PIC 99.                            00595620
+            05  FILLER               PIC X(1)   VALUE "%".              00595701
+            05  FILLER               PIC X(49)  VALUE SPACES.           00595901
+      *                                                                 00596001
+       01   IP2-ITEM-PRINT-LINE-2.                                      00596101
+            05  FILLER               PIC X(10)  VALUE SPACES.           00596201
+            05  IP2-ITEM-NUMBER      PIC 9(4).                          00596301
+            05  FILLER               PIC X(8)   VALUE SPACES.           00596401
+            05  IP2-ITEM-DESCRIPTION PIC X(34).                         00596501
+            05  FILLER               PIC X(3)   VALUE SPACES.           00596601
+            05  IP2-ITEM-COST        PIC ZZ9.99.                        00596701
+            05  FILLER               PIC X(3)   VALUE SPACES.           00596801
+            05  IP2-ITEM-PRICE       PIC $$$9.99.                       00596901
+            05  FILLER               PIC X(5)   VALUE SPACES.           00597001
+            05  IP2-PROFIT-MARGIN    PIC 99.                            00597120
+            05  FILLER               PIC X(1)   VALUE "%".              00597201
+            05  FILLER               PIC X(3)   VALUE SPACES.           00597401
+            05  FILLER               PIC X(36)                          00597501
+                  VALUE "CANNOT DETERMINE PM BASED ON ITEM NO".         00597601
+            05  FILLER               PIC X(10)  VALUE SPACES.           00597701
+      *                                                                 00597801
+       01   IP3-ITEM-PRINT-LINE-3.                                      00597901
+            05  FILLER               PIC X(10)  VALUE SPACES.           00598001
+            05  IP3-ITEM-NUMBER      PIC 9(4).                          00598101
+            05  FILLER               PIC X(8)   VALUE SPACES.           00598201
+            05  IP3-ITEM-DESCRIPTION PIC X(34).                         00598301
+            05  FILLER               PIC X(3)   VALUE SPACES.           00598401
+            05  IP3-ITEM-COST        PIC ZZ9.99.                        00598501
+            05  FILLER               PIC X(3)   VALUE SPACES.           00598601
+            05  IP3-ITEM-PRICE       PIC $$$9.99.                       00598701
+            05  FILLER               PIC X(5)   VALUE SPACES.           00598801
+            05  IP3-PROFIT-MARGIN    PIC 99.                            00598920
+            05  FILLER               PIC X(1)   VALUE "%".              00599001
+            05  FILLER               PIC X(3)   VALUE SPACES.           00599201
+            05  FILLER               PIC X(22)                          00599301
+                  VALUE "ON SIZE ERROR OCCURRED".                       00599401
+            05  FILLER               PIC X(24)  VALUE SPACES.           00599501
+      *                                                                 00599601
+       01   TIL-TOTAL-ITEMS-LINE.                                       00599701
+            05  FILLER               PIC X(10)  VALUE SPACES.           00599819
+            05  FILLER          PIC X(13)  VALUE "TOTAL ITEMS: ".       00599901
+            05  TIL-TOTAL-ITEMS      PIC ZZZ,ZZ9.                       00600001
+            05  FILLER               PIC X(102) VALUE SPACES.           00600101
+      *                                                                 00600201
+      *********************************************************         00600301
+       PROCEDURE DIVISION.                                              00600401
+      *********************************************************         00601001
+      *                                                                 00610001
+       000-PROGRAM-CONTROL.                                             00620001
+      *********************************************************         00630001
+           PERFORM A100-INITIALIZE.                                     00640001
+           PERFORM A200-PRINT-REPORT-LINES                              00650001
+               UNTIL WS-EOF-SWITCH = "Y".                               00660001
+           PERFORM A300-FINALIZE.                                       00670001
+           STOP RUN.                                                    00680001
+      *                                                                 00690001
+       A100-INITIALIZE.                                                 00700001
+      *********************************************************         00710001
+           OPEN INPUT IIF-ITEM-INFILE2.                                 00720001
+           OPEN OUTPUT SPR-SELLING-PRICE-REPORT.                        00730001
+           PERFORM B100-GET-DATE-TIME.                                  00740001
+           PERFORM B200-PRINT-HEADING-LINES.                            00750001
+           PERFORM B300-READ-ITEM-INFILE.                               00760001
+      *                                                                 00770001
+       A200-PRINT-REPORT-LINES.                                         00780001
+      *********************************************************         00790001
+           IF WS-LINE-COUNT >= WS-LINES-ON-PAGE                         00800001
+              PERFORM B200-PRINT-HEADING-LINES.                         00810001
+      *                                                                 00820001
+           PERFORM B400-DETERMINE-PROFIT-MARGIN.                        00830001
+           PERFORM C100-CALCULATE-ITEM-PRICE.                           00844315
+      *                                                                 00844401
+           ADD 1                   TO WS-LINE-COUNT.                    00844918
+           ADD 1                   TO WS-TOTAL-ITEMS.                   00845001
+           PERFORM B300-READ-ITEM-INFILE.                               00845101
+      *                                                                 00847001
+       A300-FINALIZE.                                                   00848001
+      *********************************************************         00849001
+           PERFORM B500-PRINT-TOTAL-ITEMS.                              00850001
+           CLOSE IIF-ITEM-INFILE2.                                      00860001
+           CLOSE SPR-SELLING-PRICE-REPORT.                              00870001
+      *                                                                 00880001
+       B100-GET-DATE-TIME.                                              00890001
+      *********************************************************         00900001
+           MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-AND-TIME.      00910001
+           MOVE WS-MONTH      TO HL1-MONTH.                             00920001
+           MOVE WS-DAY        TO HL1-DAY.                               00930001
+           MOVE WS-YEAR       TO HL1-YEAR.                              00940001
+           MOVE WS-HOUR       TO HL2-HOUR.                              00950001
+           MOVE WS-MINUTE     TO HL2-MINUTE.                            00960001
+      *                                                                 00970001
+       B200-PRINT-HEADING-LINES.                                        00980001
+      *********************************************************         00990001
+           ADD 1              TO WS-PAGE-COUNT.                         01000001
+           MOVE WS-PAGE-COUNT TO HL1-PAGE-NUMBER.                       01010001
+      *                                                                 01020001
+           WRITE REPORT-LINE  FROM HL1-HEADING-LINE-1                   01030001
+                  AFTER ADVANCING PAGE.                                 01040001
+           WRITE REPORT-LINE  FROM HL2-HEADING-LINE-2                   01050001
+                  AFTER ADVANCING 1 LINES.                              01060001
+           WRITE REPORT-LINE  FROM HL3-HEADING-LINE-3                   01070001
+                  AFTER ADVANCING 2 LINES.                              01080001
+           WRITE REPORT-LINE  FROM HL4-HEADING-LINE-4                   01090001
+                  AFTER ADVANCING 1 LINES.                              01100001
+      *                                                                 01110001
+           MOVE ZERO          TO WS-LINE-COUNT.                         01120001
+      *                                                                 01130001
+       B300-READ-ITEM-INFILE.                                           01140001
+      *********************************************************         01150001
+           READ IIF-ITEM-INFILE2                                        01151001
+                AT END MOVE "Y" TO WS-EOF-SWITCH.                       01152001
+      *                                                                 01153001
+       B400-DETERMINE-PROFIT-MARGIN.                                    01153101
+      *********************************************************         01153201
+            EVALUATE  IN-ITEM-NUMBER                                    01153304
+               WHEN "01" THROUGH "09"                                   01153404
+                    MOVE 0.52 TO WS-VARIABLE-PROFIT-DECIMAL             01153513
+                    PERFORM C100-CALCULATE-ITEM-PRICE                   01153615
+                    PERFORM C200-ZERO-TEST-AND-PRINT                    01153715
+               WHEN "10" THROUGH "19"                                   01154204
+                    MOVE 0.40 TO WS-VARIABLE-PROFIT-DECIMAL             01154313
+                    PERFORM C100-CALCULATE-ITEM-PRICE                   01154415
+                    PERFORM C200-ZERO-TEST-AND-PRINT                    01154515
+               WHEN "20" THROUGH "29"                                   01155104
+                    MOVE 0.30 TO WS-VARIABLE-PROFIT-DECIMAL             01155213
+                    PERFORM C100-CALCULATE-ITEM-PRICE                   01155315
+                    PERFORM C200-ZERO-TEST-AND-PRINT                    01155415
+               WHEN "30" THROUGH "39"                                   01156004
+                    MOVE 0.33 TO WS-VARIABLE-PROFIT-DECIMAL             01156113
+                    PERFORM C100-CALCULATE-ITEM-PRICE                   01156215
+                    PERFORM C200-ZERO-TEST-AND-PRINT                    01156315
+               WHEN "40" THROUGH "49"                                   01156904
+                    MOVE 0.35 TO WS-VARIABLE-PROFIT-DECIMAL             01157013
+                    PERFORM C100-CALCULATE-ITEM-PRICE                   01157115
+                    PERFORM C200-ZERO-TEST-AND-PRINT                    01157215
+               WHEN "50" THROUGH "59"                                   01157804
+                    MOVE 0.50 TO WS-VARIABLE-PROFIT-DECIMAL             01157913
+                    PERFORM C100-CALCULATE-ITEM-PRICE                   01158015
+                    PERFORM C200-ZERO-TEST-AND-PRINT                    01158115
+               WHEN OTHER                                               01158704
+                    MOVE 0             TO WS-VARIABLE-PROFIT-DECIMAL    01158923
+                    MOVE IN-ITEM-COST  TO WS-ITEM-PRICE                 01159023
+                    PERFORM D200-PRINT-IP2-ITEM-NUM-ERROR               01159115
+            END-EVALUATE.                                               01159205
+      *                                                                 01159301
+       B500-PRINT-TOTAL-ITEMS.                                          01159401
+      *********************************************************         01159501
+           MOVE WS-TOTAL-ITEMS       TO TIL-TOTAL-ITEMS.                01159601
+           WRITE REPORT-LINE         FROM TIL-TOTAL-ITEMS-LINE          01159701
+                 AFTER ADVANCING 2 LINES.                               01159801
+      *                                                                 01159901
+       C100-CALCULATE-ITEM-PRICE.                                       01163015
+      *********************************************************         01170001
+           SUBTRACT WS-VARIABLE-PROFIT-DECIMAL FROM 1                   01251015
+              GIVING WS-DIVISOR.                                        01251115
+           DIVIDE IN-ITEM-COST BY WS-DIVISOR                            01252006
+              GIVING WS-ITEM-PRICE ROUNDED                              01253006
+                ON SIZE ERROR                                           01254006
+                   MOVE 0 TO WS-ITEM-PRICE.                             01255006
+      *                                                                 01260001
+       C200-ZERO-TEST-AND-PRINT.                                        01261015
+      *********************************************************         01262010
+           IF WS-ITEM-PRICE NOT ZERO                                    01270015
+               PERFORM D100-PRINT-IP1-NO-ERRORS                         01280015
+           ELSE                                                         01290015
+               PERFORM D300-PRINT-IP3-ON-SIZE-ERROR                     01300015
+           END-IF.                                                      01310015
+      *                                                                 01320010
+       D100-PRINT-IP1-NO-ERRORS.                                        01330015
+      *********************************************************         01340015
+           MOVE IN-ITEM-NUMBER       TO IP1-ITEM-NUMBER.                01350015
+           MOVE IN-ITEM-DESCRIPTION  TO IP1-ITEM-DESCRIPTION.           01360015
+           MOVE IN-ITEM-COST         TO IP1-ITEM-COST.                  01370015
+           MOVE WS-ITEM-PRICE        TO IP1-ITEM-PRICE.                 01380015
+           MULTIPLY WS-VARIABLE-PROFIT-DECIMAL BY 100                   01390015
+               GIVING IP1-PROFIT-MARGIN.                                01400015
+           WRITE REPORT-LINE FROM IP1-ITEM-PRINT-LINE-1                 01410015
+                AFTER ADVANCING 1 LINES.                                01420017
+      *                                                                 01430015
+       D200-PRINT-IP2-ITEM-NUM-ERROR.                                   01440015
+      *********************************************************         01450015
+           MOVE IN-ITEM-NUMBER       TO IP2-ITEM-NUMBER.                01460015
+           MOVE IN-ITEM-DESCRIPTION  TO IP2-ITEM-DESCRIPTION.           01470015
+           MOVE IN-ITEM-COST         TO IP2-ITEM-COST.                  01480015
+           MOVE WS-ITEM-PRICE        TO IP2-ITEM-PRICE.                 01490015
+           MOVE ZERO                 TO IP2-PROFIT-MARGIN.              01500015
+           WRITE REPORT-LINE FROM IP2-ITEM-PRINT-LINE-2                 01510015
+                AFTER ADVANCING 1 LINES.                                01520017
+      *                                                                 01530015
+       D300-PRINT-IP3-ON-SIZE-ERROR.                                    01540015
+      *********************************************************         01550015
+           MOVE IN-ITEM-NUMBER       TO IP3-ITEM-NUMBER.                01560015
+           MOVE IN-ITEM-DESCRIPTION  TO IP3-ITEM-DESCRIPTION.           01570015
+           MOVE IN-ITEM-COST         TO IP3-ITEM-COST.                  01580015
+           MOVE WS-ITEM-PRICE        TO IP3-ITEM-PRICE.                 01590015
+           MULTIPLY WS-VARIABLE-PROFIT-DECIMAL BY 100                   01600015
+               GIVING IP3-PROFIT-MARGIN.                                01610015
+           WRITE REPORT-LINE FROM IP3-ITEM-PRINT-LINE-3                 01620015
+                AFTER ADVANCING 1 LINES.                                01630017
+      *                                                                 01640015

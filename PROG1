@@ -1,0 +1,105 @@
+       IDENTIFICATION DIVISION.                                         00010005
+      *                                                                 00020000
+       PROGRAM-ID. PROG1.                                               00030005
+       AUTHOR. TYLER LAWTON.                                            00040005
+       DATE-WRITTEN. 01/17/2018.                                        00050005
+       DATE-COMPILED.                                                   00060001
+      *                                                                 00070001
+      *PURPOSE--THE PURPOSE OF THIS PROGRAM IS TO PRINT A NAME AND      00080001
+      *         ADDRESS REPORT FOR KILLIAN KENNEL CLUB.                 00090001
+      *                                                                 00100001
+      *INPUT--  THE INPUT TO THIS PROGRAM IS DATA FILE "FIRST"          00110001
+      *         WHICH IS CONTRUCTED AS FOLLOWS:                         00120001
+      *                                                                 00130001
+      *         COLUMN         CONTENTS                                 00140001
+      *         1 - 20         NAME (ALPAHNUMERIC)                      00150001
+      *        25 - 44         FIRST LINE ADDRESS (ALPHANUMERIC)        00160001
+      *        50 - 69         SECOND LINE ADDRESS (ALPHANUMERIC)       00170001
+      *        70 - 80         BLANK                                    00180001
+      *                                                                 00190001
+      *PROCESSING-THE DATA IS READ FROM THE DATA FILE, MOVED FROM THE   00200001
+      *           INPUT-FILE AREA TO THE OUTPUT-FILE AREA, AND THEN     00210002
+      *           WRITTEN. NO PROCESSING IS DONE                        00220002
+      *                                                                 00230002
+      *OUTPUT--   THE OUTPUT TO THIS PROGRAM IS ONE REPORT WHICH        00240007
+      *           CONTIANS NAMES AND ADDRESSES.                         00250002
+      *                                                                 00260002
+      *                                                                 00270002
+       ENVIRONMENT DIVISION.                                            00280002
+      *                                                                 00290002
+       INPUT-OUTPUT SECTION.                                            00300002
+      *                                                                 00310002
+       FILE-CONTROL.                                                    00320002
+            SELECT INPUT-FILE ASSIGN TO INFILE.                         00330002
+            SELECT OUTPUT-FILE ASSIGN TO OUTFILE.                       00340002
+      *                                                                 00350002
+      *                                                                 00360002
+       DATA DIVISION.                                                   00370002
+      *                                                                 00380002
+       FILE SECTION.                                                    00390002
+      *                                                                 00400002
+       FD  INPUT-FILE                                                   00410002
+           RECORD CONTAINS 80 CHARACTERS                                00420002
+           RECORDING MODE IS F                                          00430002
+           LABEL RECORDS ARE STANDARD                                   00440003
+           DATA RECORD IS IN-RECORD.                                    00450002
+      *                                                                 00460002
+       01  IN-RECORD.                                                   00470002
+           05  IN-NAME               PIC X(20).                         00480002
+           05  FILLER                PIC X(4).                          00490002
+           05  IN-ADDRESS1           PIC X(20).                         00500002
+           05  FILLER                PIC X(5).                          00510002
+           05  IN-ADDRESS2           PIC X(20).                         00520002
+           05  FILLER                PIC X(11).                         00530002
+      *                                                                 00540002
+       FD  OUTPUT-FILE                                                  00550002
+           RECORD CONTAINS 132 CHARACTERS                               00560002
+           RECORDING MODE IS F                                          00570002
+           LABEL RECORDS ARE STANDARD                                   00580002
+           DATA RECORD IS REPORT-LINE.                                  00590002
+      *                                                                 00600002
+       01  REPORT-LINE               PIC X(132).                        00610002
+      *                                                                 00620002
+      *                                                                 00630002
+       WORKING-STORAGE SECTION.                                         00640002
+      *                                                                 00650002
+       01   WS-SWITCHES.                                                00660002
+            05   WS-EOF-SWITCH       PIC X  VALUE "N".                  00670004
+      *                                                                 00680002
+       01   DL-DETAIL-LINE.                                             00690002
+            05 FILLER                PIC X(13)  VALUE SPACES.           00700002
+            05 DL-NAME               PIC X(20).                         00710002
+            05 FILLER                PIC X(5)   VALUE SPACES.           00720002
+            05 DL-ADDRESS1           PIC X(20).                         00730002
+            05 FILLER                PIC X(5)   VALUE SPACES.           00740002
+            05 DL-ADDRESS2           PIC X(20).                         00750002
+            05 FILLER                PIC X(49)  VALUE SPACES.           00760002
+      *                                                                 00770002
+      *                                                                 00780002
+       PROCEDURE DIVISION.                                              00790002
+      *                                                                 00800002
+       000-PROGRAM-CONTROL.                                             00810002
+           PERFORM A100-INITIALIZE.                                     00820002
+           PERFORM A200-CREATE-REPORT                                   00830002
+               UNTIL WS-EOF-SWITCH = "Y".                               00840002
+           PERFORM A300-FINALIZE.                                       00850006
+           STOP RUN.                                                    00860002
+      *                                                                 00870002
+       A100-INITIALIZE.                                                 00880002
+           OPEN INPUT INPUT-FILE.                                       00890002
+           OPEN OUTPUT OUTPUT-FILE.                                     00900006
+           READ INPUT-FILE                                              00910002
+               AT END MOVE "Y" TO WS-EOF-SWITCH.                        00920003
+      *                                                                 00930002
+       A200-CREATE-REPORT.                                              00940002
+           MOVE IN-NAME      TO DL-NAME.                                00950002
+           MOVE IN-ADDRESS1  TO DL-ADDRESS1.                            00960002
+           MOVE IN-ADDRESS2  TO DL-ADDRESS2.                            00970002
+           WRITE REPORT-LINE FROM DL-DETAIL-LINE                        00980002
+                AFTER ADVANCING 2 LINES.                                00990002
+           READ INPUT-FILE                                              01000002
+                AT END MOVE "Y" TO WS-EOF-SWITCH.                       01010002
+      *                                                                 01020002
+       A300-FINALIZE.                                                   01030002
+           CLOSE INPUT-FILE.                                            01040002
+           CLOSE OUTPUT-FILE.                                           01050002

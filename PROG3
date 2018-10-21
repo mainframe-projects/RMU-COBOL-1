@@ -1,0 +1,232 @@
+       IDENTIFICATION DIVISION.                                         00010000
+      *                                                                 00020000
+       PROGRAM-ID. PROG3.                                               00030000
+       AUTHOR. TYLER LAWTON.                                            00040000
+       DATE-WRITTEN. 02/28/18.                                          00050003
+       DATE-COMPILED.                                                   00060000
+      *                                                                 00070000
+      *PURPOSE--THE PURPOSE OF THIS PROGRAM IS TO READ EACH RECORD      00080000
+      *         FROM A DIFFERENT FIXED-LENGTH SEQUENTIAL INPUT DATA     00090000
+      *         FILE AND PREPARE A SINGLE-SPACED "ACCOUNT BALANCE       00091000
+      *         REPORT", WHICH LISTS ACCOUNT NUMBERS, NAMES AND         00092000
+      *         ACCOUNT BALANCES                                        00093000
+      *                                                                 00094000
+      *INPUT--  THE INPUT TO THIS PROGRAM IS DATA FILE "SECOND"         00095000
+      *         WHICH IS CONTRUCTED AS FOLLOWS:                         00096000
+      *                                                                 00097000
+      *         COLUMN         CONTENTS                                 00098000
+      *         1 - 20   20    NAME                    (ALPHANUMERIC)   00099004
+      *        21 - 24   4     ACCOUNT NUMBER         (NUMERIC,INTEGER) 00100004
+      *        25 - 44   20    ADDRESS LINE 1          (ALPHANUMERIC)   00110004
+      *        45 - 47   3     CODE                    (ALPHANUMERIC)   00120004
+      *        48 - 61   14    CITY                    (ALPHANUMERIC)   00130004
+      *        62 - 63   2     STATE                   (ALPHANUMERIC)   00140004
+      *        64 - 68   5     ZIP CODE                (ALPHANUMERIC)   00150004
+      *        69 - 74   6     ACCOUNT BALANCE (UNSIGNED NUMERIC, 2 DEC)00160004
+      *        75 - 80   6     FILLER                                   00170004
+      *                                                                 00180000
+      *OUTPUT-- DATA FILE "ACCTBAL"                                     00270507
+      *                                                                 00270607
+      *                                                                 00270707
+      *                                                                 00270807
+       ENVIRONMENT DIVISION.                                            00270900
+      *                                                                 00271000
+       INPUT-OUTPUT SECTION.                                            00271100
+      *                                                                 00271200
+       FILE-CONTROL.                                                    00271300
+            SELECT CU-CUSTOMER-FILE ASSIGN TO INFILE.                   00272004
+            SELECT ABR-ACCOUNT-BALANCE-REPORT ASSIGN TO OUTFILE.        00273016
+      *                                                                 00274000
+      *                                                                 00275000
+       DATA DIVISION.                                                   00276000
+      *                                                                 00277000
+       FILE SECTION.                                                    00278000
+      *                                                                 00279000
+       FD  CU-CUSTOMER-FILE                                             00280004
+           RECORD CONTAINS 80 CHARACTERS                                00290000
+           RECORDING MODE IS F                                          00300000
+           LABEL RECORDS ARE STANDARD                                   00310000
+           DATA RECORD IS IN-RECORD.                                    00320000
+      *                                                                 00330000
+       01  IN-RECORD.                                                   00340000
+           05  IN-NAME               PIC X(20).                         00350000
+           05  IN-ACCOUNT-NUMBER     PIC 9(4).                          00360007
+           05  IN-ADDRESS1           PIC X(20).                         00370000
+           05  IN-CODE               PIC X(3).                          00380000
+           05  IN-CITY               PIC X(14).                         00390000
+           05  IN-STATE              PIC X(2).                          00400000
+           05  IN-ZIP                PIC X(5).                          00410000
+           05  IN-ACCOUNT-BALANCE    PIC 9(4)V99.                       00420007
+           05  FILLER                PIC X(6).                          00430000
+      *                                                                 00440000
+       FD  ABR-ACCOUNT-BALANCE-REPORT                                   00450016
+           RECORD CONTAINS 132 CHARACTERS                               00460000
+           RECORDING MODE IS F                                          00470000
+           LABEL RECORDS ARE STANDARD                                   00480000
+           DATA RECORD IS REPORT-LINE.                                  00490000
+      *                                                                 00500000
+       01  REPORT-LINE               PIC X(132).                        00510000
+      *                                                                 00520000
+      *                                                                 00530000
+       WORKING-STORAGE SECTION.                                         00540000
+      *                                                                 00550000
+       01   WS-SWITCHES.                                                00560000
+            05   WS-EOF-SWITCH       PIC X  VALUE "N".                  00570000
+      *                                                                 00571004
+       01   WS-PRINT-FIELDS.                                            00572007
+            05   WS-PAGE-COUNT       PIC S9(3)     VALUE ZERO.          00573005
+            05   WS-LINES-ON-PAGE    PIC S9(3)     VALUE +45.           00574014
+            05   WS-LINE-COUNT       PIC S9(3)     VALUE ZERO.          00575005
+      *                                                                 00576004
+       01   WS-TOTAL-FIELDS.                                            00577007
+            05   WS-GRAND-TOTAL      PIC S9(10)V99 VALUE ZERO.          00578005
+            05   WS-TOTAL-CUSTOMERS  PIC S9(6)     VALUE ZERO.          00579005
+      *                                                                 00580000
+       01   WS-CURRENT-DATE-AND-TIME.                                   00581007
+            05   WS-YEAR             PIC 9999.                          00582006
+            05   WS-MONTH            PIC 99.                            00583006
+            05   WS-DAY              PIC 99.                            00584006
+            05   WS-HOUR             PIC 99.                            00585008
+            05   WS-MINUTE           PIC 99.                            00586008
+            05   FILLER              PIC X(9).                          00587006
+      *                                                                 00588006
+       01   HL1-HEADING-LINE-1.                                         00589007
+            05  FILLER               PIC X(25)  VALUE SPACES.           00589113
+            05  FILLER               PIC X(6)   VALUE "DATE: ".         00589206
+            05  HL1-MONTH            PIC 9(2).                          00589406
+            05  FILLER               PIC X(1)   VALUE "/".              00589513
+            05  HL1-DAY              PIC 9(2).                          00589606
+            05  FILLER               PIC X(1)   VALUE "/".              00589713
+            05  HL1-YEAR             PIC 9(4).                          00589806
+            05  FILLER               PIC X(13)  VALUE SPACES.           00589906
+            05  FILLER   PIC X(22) VALUE "ACCOUNT BALANCE REPORT".      00590016
+            05  FILLER               PIC X(19)  VALUE SPACES.           00590106
+            05  FILLER               PIC X(6)   VALUE "PAGE:".          00590206
+            05  HL1-PAGE-NUMBER      PIC ZZ9.                           00590315
+            05  FILLER               PIC X(28).                         00590414
+      *                                                                 00590514
+       01   HL2-HEADING-LINE-2.                                         00590607
+            05  FILLER               PIC X(25)  VALUE SPACES.           00590713
+            05  FILLER               PIC X(6)   VALUE "TIME: ".         00590806
+            05  HL2-HOUR             PIC 9(2).                          00591009
+            05  FILLER               PIC X(1)   VALUE ":".              00591113
+            05  HL2-MINUTE           PIC 9(2).                          00591209
+            05  FILLER               PIC X(59)  VALUE SPACES.           00591308
+            05  FILLER               PIC X(5)   VALUE "PROG3".          00591406
+            05  FILLER               PIC X(32).                         00591506
+      *                                                                 00591614
+       01   HL3-HEADING-LINE-3.                                         00591707
+            05  FILLER               PIC X(25)  VALUE SPACES.           00591813
+            05  FILLER               PIC X(7)   VALUE "ACCOUNT".        00591906
+            05  FILLER               PIC X(5)   VALUE SPACES.           00592006
+            05  FILLER               PIC X(4)   VALUE "NAME".           00592106
+            05  FILLER               PIC X(22)  VALUE SPACES.           00592213
+            05  FILLER               PIC X(7)   VALUE "ACCOUNT".        00592306
+            05  FILLER               PIC X(62)  VALUE SPACES.           00592413
+      *                                                                 00592514
+       01   HL4-HEADING-LINE-4.                                         00592608
+            05  FILLER               PIC X(25)  VALUE SPACES.           00592713
+            05  FILLER               PIC X(6)   VALUE "NUMBER".         00592806
+            05  FILLER               PIC X(32)  VALUE SPACES.           00592913
+            05  FILLER               PIC X(7)   VALUE "BALANCE".        00593013
+            05  FILLER               PIC X(62)  VALUE SPACES.           00593113
+      *                                                                 00593214
+       01   ADL-ACCOUNT-DETAIL-LINE.                                    00593307
+            05  FILLER               PIC X(25)  VALUE SPACES.           00593413
+            05  ADL-ACCOUNT-NUMBER   PIC 9(4).                          00593506
+            05  FILLER               PIC X(8)   VALUE SPACES.           00593606
+            05  ADL-ACCOUNT-NAME     PIC X(20).                         00593706
+            05  FILLER               PIC X(4)   VALUE SPACES.           00593808
+            05  ADL-ACCOUNT-BALANCE  PIC ZZ,ZZ9.99.                     00593913
+            05  FILLER               PIC X(62)  VALUE SPACES.           00594006
+      *                                                                 00594106
+       01   GTL-GRAND-TOTAL-LINE.                                       00594207
+            05  FILLER               PIC X(56)  VALUE SPACES.           00594313
+            05  GTL-GRAND-TOTAL      PIC ZZZ,ZZZ,ZZ9.99.                00596006
+            05  FILLER               PIC X(62).                         00597013
+      *                                                                 00598006
+       01   TCL-TOTAL-CUSTOMER-LINE.                                    00599007
+            05  FILLER               PIC X(25)  VALUE SPACES.           00600013
+            05  FILLER          PIC X(17)  VALUE "TOTAL CUSTOMERS: ".   00610006
+            05  TCL-TOTAL-CUSTOMERS  PIC ZZZ,ZZ9.                       00620006
+            05  FILLER               PIC X(83).                         00630013
+      *                                                                 00670000
+      *                                                                 00680000
+       PROCEDURE DIVISION.                                              00690000
+      *                                                                 00701014
+       000-PROGRAM-CONTROL.                                             00710000
+           PERFORM A100-INITIALIZE.                                     00720000
+           PERFORM A200-PRINT-REPORT-LINES                              00730008
+               UNTIL WS-EOF-SWITCH = "Y".                               00740000
+           PERFORM A300-FINALIZE.                                       00750000
+           STOP RUN.                                                    00760000
+      *                                                                 00771014
+       A100-INITIALIZE.                                                 00780000
+           OPEN INPUT CU-CUSTOMER-FILE.                                 00790004
+           OPEN OUTPUT ABR-ACCOUNT-BALANCE-REPORT.                      00800016
+           PERFORM B100-GET-DATE-TIME.                                  00810007
+           PERFORM B200-PRINT-HEADING-LINES.                            00820007
+           PERFORM B300-READ-CUSTOMER-RECORD.                           00821007
+      *                                                                 00831014
+       A200-PRINT-REPORT-LINES.                                         00840007
+      *                                                                 00841007
+           IF WS-LINE-COUNT >= WS-LINES-ON-PAGE                         00842007
+              PERFORM B200-PRINT-HEADING-LINES.                         00843007
+      *                                                                 00844007
+           MOVE IN-ACCOUNT-NUMBER  TO ADL-ACCOUNT-NUMBER.               00850007
+           MOVE IN-NAME            TO ADL-ACCOUNT-NAME.                 00860007
+           MOVE IN-ACCOUNT-BALANCE TO ADL-ACCOUNT-BALANCE.              00870007
+           WRITE REPORT-LINE FROM ADL-ACCOUNT-DETAIL-LINE               00880007
+                AFTER ADVANCING 2 LINES.                                00890007
+      *                                                                 00900007
+           ADD 2                   TO WS-LINE-COUNT.                    00901007
+           ADD IN-ACCOUNT-BALANCE  TO WS-GRAND-TOTAL.                   00910007
+           ADD 1                   TO WS-TOTAL-CUSTOMERS.               00911007
+      *                                                                 00912007
+           PERFORM B300-READ-CUSTOMER-RECORD.                           00913007
+      *                                                                 00920000
+      *                                                                 00921014
+       A300-FINALIZE.                                                   00930000
+           PERFORM B400-PRINT-GRAND-TOTAL.                              00931008
+           PERFORM B500-PRINT-TOTAL-CUSTOMERS.                          00932012
+           CLOSE CU-CUSTOMER-FILE.                                      00940004
+           CLOSE ABR-ACCOUNT-BALANCE-REPORT.                            00950016
+      *                                                                 00961014
+       B100-GET-DATE-TIME.                                              00970007
+           MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-AND-TIME.      00980007
+           MOVE WS-MONTH      TO HL1-MONTH.                             00990007
+           MOVE WS-DAY        TO HL1-DAY.                               01000007
+           MOVE WS-YEAR       TO HL1-YEAR.                              01010007
+           MOVE WS-HOUR       TO HL2-HOUR.                              01020007
+           MOVE WS-MINUTE     TO HL2-MINUTE.                            01030007
+      *                                                                 01041014
+       B200-PRINT-HEADING-LINES.                                        01050007
+           ADD 1              TO WS-PAGE-COUNT.                         01060007
+           MOVE WS-PAGE-COUNT TO HL1-PAGE-NUMBER.                       01070007
+      *                                                                 01071014
+           WRITE REPORT-LINE  FROM HL1-HEADING-LINE-1                   01080007
+                  AFTER ADVANCING PAGE.                                 01090007
+           WRITE REPORT-LINE  FROM HL2-HEADING-LINE-2                   01100007
+                  AFTER ADVANCING 1 LINES.                              01110007
+           WRITE REPORT-LINE  FROM HL3-HEADING-LINE-3                   01120007
+                  AFTER ADVANCING 2 LINES.                              01130007
+           WRITE REPORT-LINE  FROM HL4-HEADING-LINE-4                   01140007
+                  AFTER ADVANCING 1 LINES.                              01150007
+      *                                                                 01151014
+           MOVE ZERO          TO WS-LINE-COUNT.                         01160007
+      *                                                                 01161014
+      *                                                                 01170007
+       B300-READ-CUSTOMER-RECORD.                                       01180007
+           READ CU-CUSTOMER-FILE                                        01190007
+                AT END MOVE "Y" TO WS-EOF-SWITCH.                       01200008
+      *                                                                 01210007
+       B400-PRINT-GRAND-TOTAL.                                          01220010
+           MOVE WS-GRAND-TOTAL  TO GTL-GRAND-TOTAL.                     01230007
+           WRITE REPORT-LINE    FROM GTL-GRAND-TOTAL-LINE               01240008
+                 AFTER ADVANCING 2 LINES.                               01250007
+      *                                                                 01260007
+       B500-PRINT-TOTAL-CUSTOMERS.                                      01270011
+           MOVE WS-TOTAL-CUSTOMERS   TO TCL-TOTAL-CUSTOMERS.            01280011
+           WRITE REPORT-LINE         FROM TCL-TOTAL-CUSTOMER-LINE       01290011
+                 AFTER ADVANCING 2 LINES.                               01300011
+      *                                                                 01320011
